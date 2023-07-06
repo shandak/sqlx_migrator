@@ -16,11 +16,17 @@ impl DatabaseOperation<Any> for Migrator<Any> {
     async fn ensure_migration_table_exists(&self) -> Result<(), Error> {
         let sql_query = match self.pool.acquire().await?.backend_name() {
             #[cfg(feature = "postgres")]
-            <Postgres as sqlx::Database>::NAME => postgres::create_migrator_table_query(),
+            <Postgres as sqlx::Database>::NAME => {
+                &postgres::create_migrator_table_query(&self.table_name)
+            }
             #[cfg(feature = "sqlite")]
-            <Sqlite as sqlx::Database>::NAME => sqlite::create_migrator_table_query(),
+            <Sqlite as sqlx::Database>::NAME => {
+                &sqlite::create_migrator_table_query(&self.table_name)
+            }
             #[cfg(feature = "mysql")]
-            <MySql as sqlx::Database>::NAME => mysql::create_migrator_table_query(),
+            <MySql as sqlx::Database>::NAME => {
+                &mysql::create_migrator_table_query(&self.table_name)
+            }
             _ => return Err(Error::UnsupportedDatabase),
         };
         sqlx::query(sql_query).execute(&self.pool).await?;
@@ -30,11 +36,11 @@ impl DatabaseOperation<Any> for Migrator<Any> {
     async fn drop_migration_table_if_exists(&self) -> Result<(), Error> {
         let sql_query = match self.pool.acquire().await?.backend_name() {
             #[cfg(feature = "postgres")]
-            <Postgres as sqlx::Database>::NAME => postgres::drop_table_query(),
+            <Postgres as sqlx::Database>::NAME => &postgres::drop_table_query(&self.table_name),
             #[cfg(feature = "sqlite")]
-            <Sqlite as sqlx::Database>::NAME => sqlite::drop_table_query(),
+            <Sqlite as sqlx::Database>::NAME => &sqlite::drop_table_query(&self.table_name),
             #[cfg(feature = "mysql")]
-            <MySql as sqlx::Database>::NAME => mysql::drop_table_query(),
+            <MySql as sqlx::Database>::NAME => &mysql::drop_table_query(&self.table_name),
             _ => return Err(Error::UnsupportedDatabase),
         };
         sqlx::query(sql_query).execute(&self.pool).await?;
@@ -48,11 +54,11 @@ impl DatabaseOperation<Any> for Migrator<Any> {
     ) -> Result<(), Error> {
         let sql_query = match connection.backend_name() {
             #[cfg(feature = "postgres")]
-            <Postgres as sqlx::Database>::NAME => postgres::add_migration_query(),
+            <Postgres as sqlx::Database>::NAME => &postgres::add_migration_query(&self.table_name),
             #[cfg(feature = "sqlite")]
-            <Sqlite as sqlx::Database>::NAME => sqlite::add_migration_query(),
+            <Sqlite as sqlx::Database>::NAME => &sqlite::add_migration_query(&self.table_name),
             #[cfg(feature = "mysql")]
-            <MySql as sqlx::Database>::NAME => mysql::add_migration_query(),
+            <MySql as sqlx::Database>::NAME => &mysql::add_migration_query(&self.table_name),
             _ => return Err(Error::UnsupportedDatabase),
         };
         sqlx::query(sql_query)
@@ -70,11 +76,13 @@ impl DatabaseOperation<Any> for Migrator<Any> {
     ) -> Result<(), Error> {
         let sql_query = match connection.backend_name() {
             #[cfg(feature = "postgres")]
-            <Postgres as sqlx::Database>::NAME => postgres::delete_migration_query(),
+            <Postgres as sqlx::Database>::NAME => {
+                &postgres::delete_migration_query(&self.table_name)
+            }
             #[cfg(feature = "sqlite")]
-            <Sqlite as sqlx::Database>::NAME => sqlite::delete_migration_query(),
+            <Sqlite as sqlx::Database>::NAME => &sqlite::delete_migration_query(&self.table_name),
             #[cfg(feature = "mysql")]
-            <MySql as sqlx::Database>::NAME => mysql::delete_migration_query(),
+            <MySql as sqlx::Database>::NAME => &mysql::delete_migration_query(&self.table_name),
             _ => return Err(Error::UnsupportedDatabase),
         };
         sqlx::query(sql_query)
@@ -94,17 +102,17 @@ impl DatabaseOperation<Any> for Migrator<Any> {
             #[cfg(feature = "postgres")]
             <Postgres as sqlx::Database>::NAME => {
                 let pool = Pool::connect(db_url).await?;
-                postgres::fetch_rows(&pool).await
+                postgres::fetch_rows(&pool, &self.table_name).await
             }
             #[cfg(feature = "sqlite")]
             <Sqlite as sqlx::Database>::NAME => {
                 let pool = Pool::connect(db_url).await?;
-                sqlite::fetch_rows(&pool).await
+                sqlite::fetch_rows(&pool, &self.table_name).await
             }
             #[cfg(feature = "mysql")]
             <MySql as sqlx::Database>::NAME => {
                 let pool = Pool::connect(db_url).await?;
-                mysql::fetch_rows(&pool).await
+                mysql::fetch_rows(&pool, &self.table_name).await
             }
             _ => return Err(Error::UnsupportedDatabase),
         }

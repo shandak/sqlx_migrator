@@ -589,7 +589,7 @@ where
 {
     migrations: HashSet<Box<dyn Migration<DB>>>,
     pool: Pool<DB>,
-    table_name: Option<String>,
+    table_name: String,
 }
 
 impl<DB> Migrator<DB>
@@ -602,23 +602,13 @@ where
         Self {
             migrations: HashSet::new(),
             pool: pool.clone(),
-            table_name: None,
-        }
-    }
-
-    fn replace_table_name(&self, query: &'static str) -> Cow<'static, str> {
-        if let Some(table_name) = &self.table_name {
-            query
-                .replace("_sqlx_migrator_migrations", table_name.as_str())
-                .into()
-        } else {
-            query.into()
+            table_name: "_sqlx_migrator_migrations".to_string(),
         }
     }
 
     /// Set custom migrations table name
     pub fn set_table_name<S: Into<String>>(&mut self, table_name: S) {
-        self.table_name = Some(table_name.into());
+        self.table_name = table_name.into();
     }
 }
 
