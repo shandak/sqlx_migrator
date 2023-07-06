@@ -18,7 +18,7 @@ Supported Databases:
 To use postgres migrator along with tokio-native-tls runtime you can configure Cargo.toml
 
 ```toml
-sqlx_migrator = { version = "0.6.0", features=["postgres", "runtime-tokio-rustls"] }
+sqlx_migrator = { version = "0.8.0", features=["postgres", "runtime-tokio", "tls-rustls"] }
 ```
 
 # Usage
@@ -93,7 +93,8 @@ Now at last you need to create migrator for your database to run migrations
 use sqlx_migrator::migrator::{Info, Migrate, Migrator};
 use sqlx_migrator::sqlx::Postgres;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let uri = std::env::var("DATABASE_URL").unwrap();
     let pool = sqlx::Pool::<Postgres>::connect(&uri).await.unwrap();
     let mut migrator = Migrator::new(&pool);
